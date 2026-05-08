@@ -1,0 +1,9 @@
+.venv
+
+data/images.zip
+data/images
+.mypy_cache
+
+output
+
+__pycache__
