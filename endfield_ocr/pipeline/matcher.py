@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Optional, List, Dict, Iterable, Tuple, Any
 from dataclasses import dataclass
 
-IMG_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
+from ..config import IMG_EXTS
 
 
 @dataclass

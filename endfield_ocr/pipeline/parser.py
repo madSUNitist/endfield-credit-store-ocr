@@ -15,15 +15,15 @@ from ..utils.text import normalize_text, normalize_num_text, clean_name, has_chi
 from ..utils.geometry import (
     rect_inter_area, rect_area, token_rect, union_token_box, rect_to_list
 )
+from ..config import ROIConfig, UIDConfig
 
-# ROI tuples matching config.py. Kept as local defaults for pure-function testability.
-ROI_DISCOUNT = (0.55, -0.03, 1.02, 0.18)
-ROI_PRICE = (0.54, 0.70, 1.02, 0.97)
-ROI_QUANTITY = (0.28, 0.45, 0.78, 0.72)
-ROI_SOLDOUT = (0.12, 0.20, 0.88, 0.78)
+ROI_DISCOUNT = ROIConfig.discount
+ROI_PRICE = ROIConfig.price
+ROI_QUANTITY = ROIConfig.quantity
+ROI_SOLDOUT = ROIConfig.sold_out
 
-UID_MIN_LEN = 5
-UID_MAX_LEN = 20
+UID_MIN_LEN = UIDConfig.min_length
+UID_MAX_LEN = UIDConfig.max_length
 
 
 def assign_tokens_to_slots(tokens: List[Token], slots: List[Slot]) -> None:

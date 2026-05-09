@@ -6,7 +6,7 @@ All functions are pure (stateless) and thread-safe.
 import math
 import cv2
 import numpy as np
-from typing import Tuple, List, Optional
+from typing import Tuple, List
 
 from ..models import Token
 from ..types import BBox
