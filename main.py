@@ -25,7 +25,7 @@ OUTPUT_DIR = Path("output")
 REFS_DIR = Path("assests/refs")  # Optional: enables icon matching for namebar-less cards
 
 MAX_INPUT_SIDE = 2400                 # Downscale high-res images to prevent VRAM/CPU spikes
-OCR_MODE = "fast"                     # "fast" (single pass), "smart" (targeted fallback), "full" (debug)
+OCR_MODE = "smart"                    # "fast" (single pass), "smart" (targeted fallback), "full" (debug)
 ENABLE_RECURSIVE_REFS = False         # Scan refs directory recursively for sub-folders
 
 # Output file paths
@@ -33,6 +33,25 @@ JSONL_PATH = OUTPUT_DIR / "results_stream.jsonl"
 FAILED_PATH = OUTPUT_DIR / "failed_paths.txt"
 FINAL_JSON_PATH = OUTPUT_DIR / "results_final.json"
 
+ITEM_NAMES: List[str] = [
+    "初级认知载体" 
+    "高级作战记录", 
+    "武器检查装置",  
+    "武器检查套组", 
+    "武器检查单元", 
+    "武库配额", 
+    "强固模具", 
+    "初级认知载体", 
+    "初级作战记录", 
+    "重型强固模具", 
+    "中级作战记录", 
+    "嵌晶玉", 
+    "协议圆盘", 
+    "协议圆盘组", 
+    "协议棱柱", 
+    "协议棱柱组", 
+    "折金票", 
+]
 
 def setup_logging() -> None:
     """Configure application-wide logging to console and file."""
@@ -40,7 +59,7 @@ def setup_logging() -> None:
     log_file = OUTPUT_DIR / "processing.log"
 
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.DEBUG,
         format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[
             logging.FileHandler(log_file, encoding="utf-8"),
@@ -112,7 +131,7 @@ def process_dataset() -> None:
     refs_path = REFS_DIR if REFS_DIR.exists() else None
 
     # 4. Initialize processor with context manager for safe resource cleanup
-    with ShopOCRProcessor(config=config, refs_dir=refs_path) as processor:
+    with ShopOCRProcessor(config=config, refs_dir=refs_path, item_names=ITEM_NAMES) as processor:
 
         processed_count = 0
         error_count = 0

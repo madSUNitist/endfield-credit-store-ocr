@@ -9,12 +9,10 @@ import logging
 import cv2
 import numpy as np
 from pathlib import Path
-from typing import Optional, Iterable, Iterator, Callable, Any, List, Tuple
-
-from endfield_ocr.types import BBox
+from typing import Optional, Iterable, Iterator, Callable, Any, List
 
 from .config import PipelineConfig
-from .models import Slot, Token, ShopResult, ItemResult
+from .models import Token, ShopResult, ItemResult
 from .backend.paddle import PaddleOCRBackend
 from .pipeline.detector import detect_card_quads, rectify_by_card_plane
 from .pipeline.slot_builder import build_slots_after_rectification
@@ -77,7 +75,7 @@ class ShopOCRProcessor:
             self._refs_cache = load_ref_items(self.refs_dir, self.config.recursive_refs)
             
             if self._refs_cache:
-                self.item_names = [ref.name for ref in self._refs_cache]
+                self.item_names.extend([ref.name for ref in self._refs_cache])
                 
         self._initialized = True
 
@@ -214,6 +212,17 @@ class ShopOCRProcessor:
             full_tokens = ocr.recognize(rectified, source="paddle_full")
             tokens = full_tokens.copy()
             ocr_meta["full_passes"] = 1
+            
+            if self.config.debug_save_dir is not None:
+                vis_crop = draw_boxes(
+                    rectified,
+                    [t.box for t in tokens],
+                    labels=[f"{t.text} ({t.score:.2f})" for t in tokens],
+                    color=(0, 0, 255),
+                    thickness=5,
+                    font_scale=1.0
+                )
+                cv2.imwrite(str(self.config.debug_save_dir / "04_rectified_ocr.png"), vis_crop)
 
             if mode == "fast":
                 # Fast: only full image, plus optional UID/refresh fallback
@@ -324,10 +333,8 @@ class ShopOCRProcessor:
         parsed_items: List[ItemResult] = []
         
         for s in slots:
-            print(s.__dict__)
             name, name_conf, name_occ = parse_name(s, self.item_names)
             price, orig_price, price_present = parse_prices(s, self.item_names)
-            print(name, name_conf, name_occ, price, orig_price, price_present)
             
             name_source = "ocr_namebar" if name is not None else None
             match_info = None
