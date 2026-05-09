@@ -25,8 +25,8 @@ uv sync
 依赖项：
 - opencv-python
 - numpy
-- paddleocr >=3.5.0
-- paddlepaddle 3.2.0
+- paddleocr>=3.5.0
+- paddlepaddle<3.3
 - rapidfuzz
 - pillow
 
