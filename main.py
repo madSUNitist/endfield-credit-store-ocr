@@ -25,7 +25,7 @@ OUTPUT_DIR = Path("output")
 REFS_DIR = Path("assests/refs")  # Optional: enables icon matching for namebar-less cards
 
 MAX_INPUT_SIDE = 2400                 # Downscale high-res images to prevent VRAM/CPU spikes
-OCR_MODE = "full"                     # "fast" (single pass), "smart" (targeted fallback), "full" (debug)
+OCR_MODE = "fast"                     # "fast" (single pass), "smart" (targeted fallback), "full" (debug)
 ENABLE_RECURSIVE_REFS = False         # Scan refs directory recursively for sub-folders
 
 # Output file paths

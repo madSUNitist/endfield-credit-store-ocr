@@ -324,8 +324,10 @@ class ShopOCRProcessor:
         parsed_items: List[ItemResult] = []
         
         for s in slots:
+            print(s.__dict__)
             name, name_conf, name_occ = parse_name(s, self.item_names)
             price, orig_price, price_present = parse_prices(s, self.item_names)
+            print(name, name_conf, name_occ, price, orig_price, price_present)
             
             name_source = "ocr_namebar" if name is not None else None
             match_info = None
