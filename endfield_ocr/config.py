@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Tuple, Literal, Optional
 
-IMG_EXTS: frozenset = {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
+IMG_EXTS: frozenset[str] = frozenset({".png", ".jpg", ".jpeg", ".webp", ".bmp"})
 
 @dataclass(frozen=True)
 class ROIConfig(object):

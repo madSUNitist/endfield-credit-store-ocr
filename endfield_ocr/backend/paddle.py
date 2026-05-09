@@ -35,6 +35,8 @@ class PaddleOCRBackend(OCRBackend):
         kwargs: Dict[str, Any] = {
             "lang": self.config.language,
             "use_textline_orientation": self.config.use_textline_orientation,
+            "use_doc_orientation_classify": False,
+            "use_doc_unwarping": False,
         }
         if self.config.text_det_limit_side_len is not None:
             kwargs["text_det_limit_side_len"] = self.config.text_det_limit_side_len
@@ -130,7 +132,7 @@ class PaddleOCRBackend(OCRBackend):
         if not raw_results or not isinstance(raw_results, list):
             return tokens
 
-        for page_result in raw_results:
+        for page_result in raw_results:            
             if not isinstance(page_result, dict):
                 continue
 

@@ -9,7 +9,7 @@ dependencies = [
     "numpy>=2.3.5",
     "opencv-python>=4.13.0.92",
     "paddleocr>=3.5.0",
-    "paddlepaddle==3.2.0",
+    "paddlepaddle<3.3",
     "pillow>=12.2.0",
     "rapidfuzz>=3.14.5",
 ]

@@ -3,16 +3,16 @@ revision = 3
 requires-python = ">=3.13"
 resolution-markers = [
     "python_full_version >= '3.15' and sys_platform == 'darwin'",
+    "python_full_version >= '3.15' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "python_full_version >= '3.15' and sys_platform == 'win32'",
+    "python_full_version >= '3.15' and sys_platform == 'emscripten'",
+    "(python_full_version >= '3.15' and platform_machine != 'aarch64' and sys_platform == 'linux') or (python_full_version >= '3.15' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32')",
     "python_full_version == '3.14.*' and sys_platform == 'darwin'",
     "python_full_version < '3.14' and sys_platform == 'darwin'",
-    "python_full_version >= '3.15' and platform_machine == 'aarch64' and sys_platform == 'linux'",
     "python_full_version == '3.14.*' and platform_machine == 'aarch64' and sys_platform == 'linux'",
     "python_full_version < '3.14' and platform_machine == 'aarch64' and sys_platform == 'linux'",
-    "python_full_version >= '3.15' and sys_platform == 'win32'",
     "python_full_version == '3.14.*' and sys_platform == 'win32'",
-    "python_full_version >= '3.15' and sys_platform == 'emscripten'",
     "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
-    "(python_full_version >= '3.15' and platform_machine != 'aarch64' and sys_platform == 'linux') or (python_full_version >= '3.15' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32')",
     "(python_full_version == '3.14.*' and platform_machine != 'aarch64' and sys_platform == 'linux') or (python_full_version == '3.14.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32')",
     "python_full_version < '3.14' and sys_platform == 'win32'",
     "python_full_version < '3.14' and sys_platform == 'emscripten'",
@@ -306,7 +306,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=2.3.5" },
     { name = "opencv-python", specifier = ">=4.13.0.92" },
     { name = "paddleocr", specifier = ">=3.5.0" },
-    { name = "paddlepaddle", specifier = "==3.2.0" },
+    { name = "paddlepaddle", specifier = "<3.3" },
     { name = "pillow", specifier = ">=12.2.0" },
     { name = "rapidfuzz", specifier = ">=3.14.5" },
 ]
@@ -710,7 +710,7 @@ wheels = [
 
 [[package]]
 name = "paddlepaddle"
-version = "3.2.0"
+version = "3.2.2"
 source = { registry = "https://mirrors.aliyun.com/pypi/simple" }
 dependencies = [
     { name = "httpx" },
@@ -723,10 +723,10 @@ dependencies = [
     { name = "typing-extensions" },
 ]
 wheels = [
-    { url = "https://mirrors.aliyun.com/pypi/packages/e6/7c/32f4ae078f4a56c27442ed6ef23cb9145932374463ba78a811d7305bbca3/paddlepaddle-3.2.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:38184e1ea7fd7bf03883ea61f45619b9712d92c13ad1fa16934ea9e0d6d3e991" },
-    { url = "https://mirrors.aliyun.com/pypi/packages/7a/79/953d2f61a956e1c0603f53ae28eec6abcaecac910b09f2f9ea387a549077/paddlepaddle-3.2.0-cp313-cp313-manylinux1_x86_64.whl", hash = "sha256:fa2aecd061424350f6770a83dda079691f7224635cff276eaef4e3e17440039d" },
-    { url = "https://mirrors.aliyun.com/pypi/packages/d2/b4/8cb0035148eeee3d35aeac78ea88f54c0cb82d359eb7ad5c8be270330a71/paddlepaddle-3.2.0-cp313-cp313-manylinux2014_aarch64.whl", hash = "sha256:2aa0e502f6dd284eda21c287d326454dfa26acca88c23aa0ac581d1ef98318c5" },
-    { url = "https://mirrors.aliyun.com/pypi/packages/ff/74/9568e268b6057cdd5437768ca6070247b363ed37151c314d89f65b592e8f/paddlepaddle-3.2.0-cp313-cp313-win_amd64.whl", hash = "sha256:5f59640901b44c99f1b03ec89f1785a66b04867d16f6d764908534dc07149418" },
+    { url = "https://mirrors.aliyun.com/pypi/packages/ee/14/af48dcf222555f83480c8d50662944c34952b601b1f2b2264f5afe7e073a/paddlepaddle-3.2.2-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:f7e9bc0469d13d99925cd766c4a6ceeb5ab6043b790dd415ce076fbbebb39074" },
+    { url = "https://mirrors.aliyun.com/pypi/packages/ae/95/909e963330997da9da7e3f51337c19a022d8ba2b7863aaca5694aeca26cf/paddlepaddle-3.2.2-cp313-cp313-manylinux1_x86_64.whl", hash = "sha256:c4f485596a686ea72ab0ddffc9e41178f456314a99d4538f5d181a0156a927fa" },
+    { url = "https://mirrors.aliyun.com/pypi/packages/4a/76/74aed8ab5ac6961145bf3e0907a26ffccb69e35cafcd18e4046bb68565dd/paddlepaddle-3.2.2-cp313-cp313-manylinux2014_aarch64.whl", hash = "sha256:b03569ba151ac50aa730955c65dfa571fe7ae71f94574c94e8bfe5e0913a7d9c" },
+    { url = "https://mirrors.aliyun.com/pypi/packages/e5/b8/8a9f7b673c6ac0f26d8eb49cf8e7689e2f3f5cadd2fc6569ee5b9a4da81d/paddlepaddle-3.2.2-cp313-cp313-win_amd64.whl", hash = "sha256:a05d126c234d3985439cedf1f1005b109c3591ec2a0c5b59ca74a94b693eb283" },
 ]
 
 [[package]]
