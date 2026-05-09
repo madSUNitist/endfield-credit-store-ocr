@@ -1,4 +1,3 @@
-```markdown
 # Endfield Credit Store OCR
 
 从游戏截图（如明日方舟终末地信用商店）中自动提取商品信息、价格、折扣、剩余刷新次数和 UID。
