@@ -169,6 +169,7 @@ class ShopResult:
     items: List[ItemResult] = field(default_factory=list)
     uid: Optional[str] = None
     refresh_remaining: Optional[int] = None
+    refresh_remaining_time: Optional[int] = None
     refresh_total: Optional[int] = None
     meta: Optional[Dict[str, Any]] = None
     
@@ -178,6 +179,7 @@ class ShopResult:
             "image_path": self.image_path,
             "uid": self.uid,
             "refresh_remaining": self.refresh_remaining,
+            "refresh_remaining_time": self.refresh_remaining_time, 
             "refresh_total": self.refresh_total,
             "items": [item.to_dict() for item in self.items],
             "meta": self.meta,

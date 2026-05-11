@@ -341,6 +341,7 @@ def parse_prices(slot: Slot, item_names: List[str], config: ROIConfig) -> Tuple[
 def _is_refresh_anchor_text(s: str) -> bool:
     """Checks if text matches the Chinese anchor for remaining refresh count."""
     cleaned = clean_name(s)
+    # Original patterns for remaining count (X/Y)
     if "剩余次数" in cleaned:
         return True
     if ("剩余" in cleaned and "次" in cleaned) or ("刷新" in cleaned and "次" in cleaned):
@@ -349,17 +350,87 @@ def _is_refresh_anchor_text(s: str) -> bool:
         return True
     if fuzz.partial_ratio(cleaned, "剩余刷新次数") >= 72:
         return True
+    
+    # New patterns for countdown time
+    if "刷新倒计时" in cleaned:
+        return True
+    if "倒计时" in cleaned and ("刷新" in cleaned or "剩余" in cleaned):
+        return True
+    if fuzz.partial_ratio(cleaned, "刷新倒计时") >= 70:
+        return True
+    if fuzz.partial_ratio(cleaned, "倒计时") >= 70 and ("刷新" in cleaned or "剩余" in cleaned):
+        return True
+    
     return False
+
+def _parse_refresh_time_from_text(text: str) -> Optional[Dict[str, Any]]:
+    """
+    Extract refresh countdown (e.g., '5小时53分钟' or '32分钟') from a text string.
+    Tolerates common OCR errors (e.g., '小B时', '分2').
+    Returns dict with keys: hours, minutes, total_minutes, text; or None if not found.
+    """
+    full_text = normalize_text(text)
+
+    # Optional: locate anchor "倒计时" to narrow search area
+    anchor_match = re.search(r'倒计时[:：]', full_text, re.IGNORECASE)
+    if anchor_match:
+        search_text = full_text[anchor_match.end():]
+    else:
+        search_text = full_text
+
+    # 1) Pattern: X小时Y分钟 (hours + minutes)
+    pattern_hm = re.compile(
+        r'(\d{1,2})\s*(?:小?时|hours?)\D*?(\d{1,2})\s*(?:分钟?|minutes?)',
+        re.IGNORECASE
+    )
+    m = pattern_hm.search(search_text)
+    if m:
+        hours = int(m.group(1))
+        minutes = int(m.group(2))
+        if 0 <= hours <= 99 and 0 <= minutes <= 59:
+            return {
+                "hours": hours,
+                "minutes": minutes,
+                "total_minutes": hours * 60 + minutes,
+                "text": f"{hours}小时{minutes}分钟"
+            }
+
+    # 2) Pattern: only minutes (e.g., 32分钟)
+    pattern_minutes_only = re.compile(
+        r'(?<!\d)(\d{1,3})\s*(?:分钟?|minutes?)(?!\d)',
+        re.IGNORECASE
+    )
+    m = pattern_minutes_only.search(search_text)
+    if m:
+        minutes = int(m.group(1))
+        if 0 <= minutes <= 60:
+            return {
+                "hours": 0,
+                "minutes": minutes,
+                "total_minutes": minutes,
+                "text": f"{minutes}分钟"
+            }
+
+    return None
 
 
 def parse_refresh(tokens: List[Token]) -> Optional[Dict[str, Any]]:
-    """Parses remaining/total refresh count by locating the anchor text and extracting X/Y digits."""
+    """
+    Parses remaining/total refresh count (X/Y) and remaining time (countdown) from OCR tokens.
+    Returns dict with keys: remaining, total, remaining_time, text, anchor_text, confidence.
+    For each anchor line: extract time and X/Y. If at least one found, return result.
+    """
     lines = group_tokens_lines(tokens, tol_factor=2.2)
+
     for line in lines:
         raw_text = "".join(t.text for t in sorted(line, key=lambda z: z.cx))
         if not _is_refresh_anchor_text(raw_text):
             continue
-            
+
+        # Extract countdown time from this line (may be None)
+        time_info = _parse_refresh_time_from_text(raw_text)
+
+        # Extract X/Y pattern from this line
         normalized = normalize_num_text(raw_text)
         m = re.search(r"(\d{1,3})\s*/\s*(\d{1,3})", normalized)
         if not m:
@@ -371,19 +442,22 @@ def parse_refresh(tokens: List[Token]) -> Optional[Dict[str, Any]]:
                     break
             tail_text = normalize_num_text("".join(t.text for t in ordered[anchor_index:]))
             m = re.search(r"(\d{1,3})\s*/\s*(\d{1,3})", tail_text)
-            if not m:
-                continue
-                
-        return {
-            "remaining": int(m.group(1)),
-            "total": int(m.group(2)),
-            "text": m.group(0),
-            "anchor_text": raw_text,
-            "confidence": 0.96
-        }
-        
-    return None
 
+        remaining = int(m.group(1)) if m else None
+        total = int(m.group(2)) if m else None
+
+        # If we have at least one piece of information, return it
+        if time_info is not None or remaining is not None:
+            return {
+                "remaining": remaining,
+                "total": total,
+                "remaining_time": time_info,
+                "text": m.group(0) if m else None,
+                "anchor_text": raw_text,
+                "confidence": 0.96 if m else (0.85 if time_info else None)
+            }
+
+    return None
 
 def default_uid_footer_roi(image_shape: Tuple[int, int]) -> Tuple[float, float, float, float]:
     """Returns the narrow bottom-left UID search region in rectified-image coordinates."""

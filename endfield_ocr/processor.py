@@ -346,7 +346,7 @@ class ShopOCRProcessor:
             name_source = "ocr_namebar" if name is not None else None
             match_info = None
             
-            if s.namebar_rect is None and self._refs_cache:
+            if name is None and self._refs_cache:
                 card_bgr = crop_rect_img(rectified, s.rect, pad=2)
                 match_info = match_card_bgr_to_refs(card_bgr, self._refs_cache, name=f"slot_{s.id}")
                 
@@ -395,15 +395,20 @@ class ShopOCRProcessor:
             
         refresh_remaining = None
         refresh_total = None
+        refresh_remaining_time = None
         if refresh_obj is not None:
             refresh_remaining = refresh_obj.get("remaining")
             refresh_total = refresh_obj.get("total")
+            refresh_remaining_time = refresh_obj.get("remaining_time")
+            if refresh_remaining_time is not None:
+                refresh_remaining_time = refresh_remaining_time.get("total_minutes")
 
         return ShopResult(
             image_path=image_path,
             items=parsed_items,
             uid=uid_value,
             refresh_remaining=refresh_remaining,
+            refresh_remaining_time=refresh_remaining_time, 
             refresh_total=refresh_total,
             meta={
                 "original_shape": [h_orig, w_orig],

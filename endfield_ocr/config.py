@@ -36,8 +36,8 @@ class UIDConfig(object):
     UID is typically a small, faint numeric string in the bottom-left footer.
     """
     # Minimum and maximum expected UID length. Filters out latency (e.g., "61ms") or price fragments.
-    min_length: int = 5
-    max_length: int = 20
+    min_length: int = 9
+    max_length: int = 10
     # Normalized ratios (left, top, right, bottom) for the initial UID search in the rectified image.
     # Covers the bottom-left 34% width and top 12.5% of the footer area. Converted to absolute pixels at runtime.
     footer_search_ratios: Tuple[float, float, float, float] = (0.0, 0.875, 0.34, 0.995)

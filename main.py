@@ -54,6 +54,8 @@ ITEM_NAMES: List[str] = [
 
 TOKEN = os.environ.get('PADDLE_TOKEN', None)
 USE_REMOTE_BACKEND = TOKEN is not None
+if USE_REMOTE_BACKEND:
+    logging.info('Use Remote Backend (token: %s)' % TOKEN)
 
 def setup_logging() -> None:
     """Configure application-wide logging to console and file."""
