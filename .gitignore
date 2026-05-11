@@ -2,7 +2,7 @@
 
 data/images
 data/wicast
-data/tools
+
 .mypy_cache
 
 output
