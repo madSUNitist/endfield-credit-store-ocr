@@ -298,6 +298,7 @@ dependencies = [
     { name = "paddlepaddle" },
     { name = "pillow" },
     { name = "rapidfuzz" },
+    { name = "requests" },
 ]
 
 [package.metadata]
@@ -309,6 +310,7 @@ requires-dist = [
     { name = "paddlepaddle", specifier = "<3.3" },
     { name = "pillow", specifier = ">=12.2.0" },
     { name = "rapidfuzz", specifier = ">=3.14.5" },
+    { name = "requests", specifier = ">=2.33.1" },
 ]
 
 [[package]]

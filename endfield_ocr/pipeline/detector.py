@@ -4,15 +4,18 @@ Card quadrilateral detection and full-image perspective rectification.
 Detects item-card boundaries on the raw image, filters by geometric constraints,
 and computes a global homography to warp the entire screenshot into a canonical UI layout.
 """
+from pathlib import Path
+
 import cv2
 import numpy as np
 import math
 from typing import Optional, Dict, List, Tuple
 
+
 from ..utils.geometry import order_quad_points, box_center_size, transform_points
+from ..config import DetectionConfig
 
-
-def detect_card_quads(image: np.ndarray, debug_path: Optional[str] = None) -> List[Dict]:
+def detect_card_quads(image: np.ndarray, config: DetectionConfig, debug_path: Optional[Path] = None) -> List[Dict]:
     """
     Detect item-card quadrilaterals on the original photo/screenshot.
     Uses multi-threshold Canny, contour area/aspect-ratio filtering,
@@ -20,56 +23,65 @@ def detect_card_quads(image: np.ndarray, debug_path: Optional[str] = None) -> Li
     """
     h, w = image.shape[:2]
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    blur = cv2.GaussianBlur(gray, (5, 5), 0)
-    
+    blur = cv2.GaussianBlur(gray, config.gaussian_blur_kernel, 0)
+
     # Dual-threshold Canny to catch both bright white borders and dark sold-out cards
-    edges_high = cv2.Canny(blur, 40, 120)
-    edges_low = cv2.Canny(blur, 20, 80)
+    (low1, high1), (low2, high2) = config.canny_thresholds
+    edges_high = cv2.Canny(blur, low1, high1)
+    edges_low = cv2.Canny(blur, low2, high2)
     edges = cv2.bitwise_or(edges_high, edges_low)
-    edges = cv2.dilate(edges, np.ones((5, 5), np.uint8), iterations=1)
-    
-    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
+    kernel = np.ones((config.dilation_kernel_size, config.dilation_kernel_size), np.uint8)
+    edges = cv2.dilate(edges, kernel, iterations=1)
+
+    # Optional debug: save edge image
+    if debug_path:
+        debug_dir = debug_path.parent
+        debug_dir.mkdir(parents=True, exist_ok=True)
+        cv2.imwrite(str(debug_path.with_suffix('.edges.png')), edges)
+
+    contours, _ = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
     quads: List[Dict] = []
     img_area = h * w
-    
+    debug_vis = image.copy() if debug_path else None
+
     for c in contours:
         area = cv2.contourArea(c)
         # Filter by relative area: ignore tiny artifacts and full-screen backgrounds
-        if area <= img_area * 0.004 or area >= img_area * 0.09:
+        if area <= img_area * config.card_area_ratio[0] or area >= img_area * config.card_area_ratio[1]:
             continue
-            
+
         x, y, bw, bh = cv2.boundingRect(c)
         cx = x + bw / 2.0
         cy = y + bh / 2.0
-        
+
         # Exclude top navigation tabs and bottom system buttons, but leave margin for camera borders
-        if cy < h * 0.10 or cy > h * 0.86:
+        if cy < h * config.exclude_top_ratio or cy > h * config.exclude_bottom_ratio:
             continue
-        if bw < w * 0.035 or bh < h * 0.075:
+        if bw < w * config.min_bbox_width_ratio or bh < h * config.min_bbox_height_ratio:
             continue
-            
+
         ar = bw / max(1.0, bh)
-        if ar <= 0.45 or ar >= 1.35:
+        if ar <= config.card_aspect_ratio[0] or ar >= config.card_aspect_ratio[1]:
             continue
-            
+
         # Fit polygon to convex hull
         hull = cv2.convexHull(c)
         peri = cv2.arcLength(hull, True)
-        approx = cv2.approxPolyDP(hull, 0.03 * peri, True)
-        
+        approx = cv2.approxPolyDP(hull, config.approx_epsilon_ratio * peri, True)
+
         if len(approx) == 4:
             pts = approx.reshape(4, 2).astype(np.float32)
         else:
             pts = cv2.boxPoints(cv2.minAreaRect(c)).astype(np.float32)
-            
+
         pts = order_quad_points(pts)
         qcx, qcy, qw, qh = box_center_size(pts)
         qar = qw / max(1.0, qh)
-        
-        if qar <= 0.45 or qar >= 1.25:
+
+        if qar <= config.quad_aspect_ratio[0] or qar >= config.quad_aspect_ratio[1]:
             continue
-            
+
         quads.append({
             "pts": pts,
             "cx": qcx,
@@ -77,36 +89,40 @@ def detect_card_quads(image: np.ndarray, debug_path: Optional[str] = None) -> Li
             "area": float(area),
             "rect": (x, y, bw, bh)
         })
-        
+
+        if debug_vis is not None:
+            cv2.drawContours(debug_vis, [c], -1, (0, 255, 0), 2)
+
+    if debug_vis is not None and debug_path:
+        cv2.imwrite(str(debug_path.with_suffix('.contours.png')), debug_vis)
+
     # Sort by area descending, then apply NMS to remove overlapping duplicates
     quads.sort(key=lambda q: q["area"], reverse=True)
     kept: List[Dict] = []
-    
+
     for q in quads:
         is_duplicate = False
         for k in kept:
             dist = math.hypot(q["cx"] - k["cx"], q["cy"] - k["cy"])
-            threshold = min(w, h) * 0.055
+            threshold = min(w, h) * config.nms_distance_ratio
             if dist <= threshold:
                 is_duplicate = True
                 break
         if not is_duplicate:
             kept.append(q)
-            
+
     # Final sort: top-to-bottom, then left-to-right
     kept.sort(key=lambda q: (q["cy"], q["cx"]))
-    
-    if debug_path is not None:
-        vis = image.copy()
-        for idx, q in enumerate(kept):
-            pts_int = q["pts"].astype(np.int32)
-            cv2.polylines(vis, [pts_int], True, (0, 255, 0), 3)
-            cv2.putText(vis, str(idx), (int(q["cx"]), int(q["cy"])), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
-        cv2.imwrite(debug_path, vis)
-        
-    return kept
 
+    # Debug: draw final quads
+    if debug_path and kept:
+        debug_final = image.copy()
+        for q in kept:
+            pts = q["pts"].reshape((-1, 1, 2)).astype(np.int32)
+            cv2.polylines(debug_final, [pts], True, (0, 0, 255), 3)
+        cv2.imwrite(str(debug_path.with_suffix('.quads.png')), debug_final)
+
+    return kept
 
 def group_quads_rows(quads: List[Dict]) -> List[List[Dict]]:
     """

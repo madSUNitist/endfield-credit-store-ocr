@@ -4,8 +4,10 @@ Provides a stable interface for text recognition engines.
 """
 from .ocr_base import OCRBackend
 from .paddle import PaddleOCRBackend
+from .remote import RemotePaddleOCRBackend
 
 __all__ = [
     "OCRBackend",
-    "PaddleOCRBackend",
+    "PaddleOCRBackend", 
+    "RemotePaddleOCRBackend"
 ]

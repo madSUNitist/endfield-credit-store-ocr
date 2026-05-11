@@ -4,7 +4,9 @@ Enables dependency injection and runtime backend swapping without touching the p
 """
 from abc import ABC, abstractmethod
 import numpy as np
-from typing import List
+from typing import List, Iterable, Iterator, Optional
+
+from ..models import Token
 
 class OCRBackend(ABC):
     """Base interface for text recognition engines.
@@ -12,11 +14,23 @@ class OCRBackend(ABC):
     """
 
     @abstractmethod
-    def recognize(self, image: np.ndarray, source: str = "ocr") -> List:
+    def recognize(self, image: np.ndarray, source: str = "ocr") -> List[Token]:
         """
         Run OCR on a single BGR image.
         Returns a list of structured text blocks (typically Token objects).
         Coordinates must be in absolute pixels relative to the input image.
+        """
+        ...
+    
+    @abstractmethod
+    def recognize_iter(
+        self,
+        images: Iterable[np.ndarray],
+        sources: Optional[Iterable[str]] = None,
+    ) -> Iterator[List[Token]]:
+        """
+        Process multiple images sequentially.
+        Yields a list of tokens for each input image.
         """
         ...
 

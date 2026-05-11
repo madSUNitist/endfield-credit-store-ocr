@@ -53,6 +53,9 @@ ITEM_NAMES: List[str] = [
     "折金票", 
 ]
 
+TOKEN = os.environ.get('PADDLE_TOKEN', None)
+USE_REMOTE_BACKEND = TOKEN is not None
+
 def setup_logging() -> None:
     """Configure application-wide logging to console and file."""
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -105,12 +108,16 @@ def process_dataset() -> None:
         return
 
     # 1. Initialize processor configuration explicitly
-    ocr_cfg = OCRConfig(mode=OCR_MODE)
+    ocr_cfg = OCRConfig(
+        mode=OCR_MODE, 
+        use_remote_backend=USE_REMOTE_BACKEND, 
+        remote_api_token=TOKEN
+    )
     config = PipelineConfig(
         ocr=ocr_cfg,
         max_input_side=MAX_INPUT_SIDE,
         recursive_refs=ENABLE_RECURSIVE_REFS,
-        debug_save_dir=Path("output/debug"),   # activate DEBUG
+        # debug_save_dir=Path("output/debug"),   # activate DEBUG
     )
 
     # 2. Prepare paths and collect images

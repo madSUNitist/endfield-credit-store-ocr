@@ -13,7 +13,11 @@ from typing import Optional, Iterable, Iterator, Callable, Any, List
 
 from .config import PipelineConfig
 from .models import Token, ShopResult, ItemResult
-from .backend.paddle import PaddleOCRBackend
+from .backend import (
+    OCRBackend, 
+    RemotePaddleOCRBackend, 
+    PaddleOCRBackend
+)
 from .pipeline.detector import detect_card_quads, rectify_by_card_plane
 from .pipeline.slot_builder import build_slots_after_rectification
 from .pipeline.parser import (
@@ -63,7 +67,7 @@ class ShopOCRProcessor:
         
         # Internal state
         self._refs_cache: List[Any] = []
-        self._ocr_backend: Optional[PaddleOCRBackend] = None
+        self._ocr_backend: Optional[OCRBackend] = None
         self._initialized = False
 
     def _ensure_initialized(self) -> None:
@@ -79,11 +83,14 @@ class ShopOCRProcessor:
                 
         self._initialized = True
 
-    def _get_ocr(self) -> PaddleOCRBackend:
+    def _get_ocr(self) -> OCRBackend:
         """Returns or creates the PaddleOCR backend singleton."""
         if self._ocr_backend is None:
             logger.info("Initializing PaddleOCR backend (lazy load)...")
-            self._ocr_backend = PaddleOCRBackend(self.config.ocr)
+            if self.config.ocr.use_remote_backend:
+                self._ocr_backend = RemotePaddleOCRBackend(self.config.ocr)
+            else:
+                self._ocr_backend = PaddleOCRBackend(self.config.ocr)
             
         return self._ocr_backend
 
@@ -101,7 +108,7 @@ class ShopOCRProcessor:
     
     def _crop_ocr_and_offset(
         self,
-        ocr_backend: "PaddleOCRBackend", 
+        ocr_backend: OCRBackend, 
         rectified: np.ndarray,
         rect: tuple[float, float, float, float],
         source: str,
@@ -164,7 +171,7 @@ class ShopOCRProcessor:
         h_orig, w_orig = img.shape[:2]
 
         # 2. Perspective detection & rectification
-        quads = detect_card_quads(img)
+        quads = detect_card_quads(img, self.config.detection, self.config.debug_save_dir)
         if self.config.debug_save_dir is not None:
             # Draw quads on original image
             quad_boxes = [q["pts"] for q in quads]
