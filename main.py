@@ -34,10 +34,9 @@ FAILED_PATH = OUTPUT_DIR / "failed_paths.txt"
 FINAL_JSON_PATH = OUTPUT_DIR / "results_final.json"
 
 ITEM_NAMES: List[str] = [
-    "初级认知载体" 
-    "高级作战记录", 
+    # "高级作战记录", 
     "武器检查装置",  
-    "武器检查套组", 
+    # "武器检查套组", 
     "武器检查单元", 
     "武库配额", 
     "强固模具", 

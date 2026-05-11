@@ -235,7 +235,7 @@ class ShopOCRProcessor:
                 # Fast: only full image, plus optional UID/refresh fallback
                 H, W = rectified.shape[:2]
                 uid_roi = default_uid_footer_roi(rectified.shape)
-                if parse_uid(tokens, rectified.shape, uid_roi=uid_roi) is None:
+                if parse_uid(tokens, self.config.uid, rectified.shape, uid_roi=uid_roi) is None:
                     uid_tokens = self._crop_ocr_and_offset(ocr, rectified, uid_roi, "paddle_uid_tiny_roi", pad=5, upscale=3.0)
                     tokens.extend(uid_tokens)
                     ocr_meta["crop_passes"] += 1
@@ -311,10 +311,10 @@ class ShopOCRProcessor:
                 assign_tokens_to_slots(tokens, slots)
                 # Collect fallback rectangles
                 from .pipeline.parser import collect_smart_fallback_rects
-                fallback_rects = collect_smart_fallback_rects(slots, self.item_names, rectified.shape)
+                fallback_rects = collect_smart_fallback_rects(slots, self.item_names, rectified.shape, self.config.roi)
                 # For each fallback rect, do local OCR
                 for x1, y1, x2, y2, src in fallback_rects:
-                    if src == "paddle_uid_tiny_roi" and parse_uid(tokens, rectified.shape) is not None:
+                    if src == "paddle_uid_tiny_roi" and parse_uid(tokens, self.config.uid, rectified.shape) is not None:
                         continue
                     if src == "paddle_footer_refresh" and parse_refresh(tokens) is not None:
                         continue
@@ -340,8 +340,8 @@ class ShopOCRProcessor:
         parsed_items: List[ItemResult] = []
         
         for s in slots:
-            name, name_conf, name_occ = parse_name(s, self.item_names)
-            price, orig_price, price_present = parse_prices(s, self.item_names)
+            name, name_conf, name_occ = parse_name(s, self.item_names, self.config.roi)
+            price, orig_price, price_present = parse_prices(s, self.item_names, self.config.roi)
             
             name_source = "ocr_namebar" if name is not None else None
             match_info = None
@@ -367,9 +367,9 @@ class ShopOCRProcessor:
                 price=price, 
                 original_price=orig_price, 
                 price_panel_present=bool(price_present),
-                discount_percent=parse_discount(s),
-                quantity=parse_quantity(s),
-                sold_out=parse_sold_out(s),
+                discount_percent=parse_discount(s, self.config.roi),
+                quantity=parse_quantity(s, self.config.roi),
+                sold_out=parse_sold_out(s, self.config.roi),
             ))
             
 
@@ -383,7 +383,7 @@ class ShopOCRProcessor:
         # 7. Extract global footer metadata (UID, remaining refreshes)
         uid_obj = None
         if tokens:
-            uid_obj = parse_uid(tokens, rectified.shape)
+            uid_obj = parse_uid(tokens, self.config.uid, rectified.shape)
             
         refresh_obj = None
         if tokens:
