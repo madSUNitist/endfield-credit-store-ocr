@@ -369,14 +369,14 @@ def canny_fallback(ref: RefItem, card: MatchCardItem, scales: Iterable[float], s
         if int(te.sum()) < 12:
             continue
             
-            score, loc = partial_canny_score(te, tm, card, stride=stride)
-            
-            if score > best_score:
-                best_score = float(score)
-                if loc is not None:
-                    best_info = (float(s), loc, (int(tw), int(th)))
-                else:
-                    best_info = (float(s), (0, 0), (int(tw), int(th)))
+        score, loc = partial_canny_score(te, tm, card, stride=stride)
+        
+        if score > best_score:
+            best_score = float(score)
+            if loc is not None:
+                best_info = (float(s), loc, (int(tw), int(th)))
+            else:
+                best_info = (float(s), (0, 0), (int(tw), int(th)))
                     
     return best_score, best_info
 
@@ -430,7 +430,7 @@ def match_card_bgr_to_refs(card_bgr: np.ndarray, refs: List[RefItem], name: str 
     chosen_info = best_info
     
     # Phase 2: Canny fallback if confidence is insufficient
-    if best_score < 0.45:
+    if best_score < 0.38:
         edge_scores: List[Tuple[float, RefItem, Optional[Tuple]]] = []
         for ref in refs:
             escore, einfo = canny_fallback(ref, card, edge_scales, stride=4)
